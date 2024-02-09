@@ -37,8 +37,8 @@ int maxEntfernung = 200;
 
 
 // Funktion zum Debuggen
-void print(String text){
-  if(debug){
+void print(String text) {
+  if (debug) {
     Serial.println(text);
   }
 }
@@ -63,13 +63,15 @@ void setup() {
 
   Serial.begin(9600);
 
-  debug = true; //Debugging aktivieren/deaktivieren
+  TurnRight(10000);
+
+  debug = false;  //Debugging aktivieren/deaktivieren
 }
 
 void loop() {
   int decision = driveDecision();
   print("Decision: " + String(decision));
-  switch (decision){
+  switch (decision) {
     case 1:
       Forward(normale_geschwindigkeit);
       break;
@@ -88,10 +90,10 @@ void loop() {
     case 6:
       Stop();
       break;
-  }   
+  }
 }
 
-int driveDecision(){
+int driveDecision() {
   /*
   0: Fehler 
   1: Forwärts 
@@ -102,24 +104,29 @@ int driveDecision(){
   6: Stop
   */
   int entfernungVorne = messeEntfernung(triggerVorne, echoVorne);
-  int entfernungHinten = messeEntfernung(triggerHinten, echoHinten);
-  int entfernungLinks = messeEntfernung(triggerLinks, echoLinks);
-  int entfernungRechts = messeEntfernung(triggerRechts, echoRechts);
-  if (entfernungVorne > 20){
+  if (entfernungVorne > 20) {
     return 1;
-  } else if (entfernungLinks > 30 || entfernungRechts > 30){
-    //Fahre in die Richtung mit mehr Platz
-    if(entfernungLinks > entfernungRechts){
-      return 3;
-    } else {
-      return 4;
-    }
-  } else if(entfernungHinten > 20){
-    return 5;
   } else {
-    return 6;
+    // !KEIN ELSE IF! Da das sonst die Leistung stark beeinträchtigt wird, da alle Sensoren gemessen werden müssen!
+    int entfernungLinks = messeEntfernung(triggerLinks, echoLinks);
+    int entfernungRechts = messeEntfernung(triggerRechts, echoRechts);
+    if (entfernungLinks > 30 || entfernungRechts > 30) {
+      //Fahre in die Richtung mit mehr Platz
+      if (entfernungLinks > entfernungRechts) {
+        return 3;
+      } else {
+        return 4;
+      }
+    } else {
+      int entfernungHinten = messeEntfernung(triggerHinten, echoHinten);
+      if (entfernungHinten > 20) {
+        return 5;
+      } else {
+        return 6;
+      }
+    }
+    return 0;
   }
-  return 0;
 }
 
 int messeEntfernung(int triggerPin, int echoPin) {
