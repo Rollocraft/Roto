@@ -5,6 +5,7 @@
 */
 
 void TurnRight(int time) {
+  digitalWrite(GelbeLEDRechts, HIGH);
   digitalWrite(motorIN1, HIGH);
   digitalWrite(motorIN2, LOW);
   digitalWrite(motorIN3, LOW);
@@ -12,9 +13,11 @@ void TurnRight(int time) {
   analogWrite(motorENA, 100);
   analogWrite(motorENB, 100);
   delay(time);
+  digitalWrite(GelbeLEDRechts, LOW);
 }
 
 void TurnLeft(int time) {
+  digitalWrite(GelbeLEDLinks, HIGH);
   digitalWrite(motorIN1, LOW);
   digitalWrite(motorIN2, HIGH);
   digitalWrite(motorIN3, HIGH);
@@ -22,6 +25,7 @@ void TurnLeft(int time) {
   analogWrite(motorENA, 100);
   analogWrite(motorENB, 100);
   delay(time);
+  digitalWrite(GelbeLEDLinks, LOW);
 }
 
 void Forward(int speed) {

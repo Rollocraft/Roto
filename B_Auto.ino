@@ -1,6 +1,7 @@
 #include <Arduino.h>
 
 // Pinbelegung
+// Trigger und Echo Pins
 const int triggerVorne = 8;
 const int echoVorne = 9;
 
@@ -13,6 +14,7 @@ const int echoRechts = 5;
 const int triggerHinten = 2;
 const int echoHinten = 3;
 
+// Motor Pins
 const int motorENA = 11;
 const int motorENB = 10;
 const int motorIN1 = A0;
@@ -20,26 +22,42 @@ const int motorIN2 = A1;
 const int motorIN3 = A2;
 const int motorIN4 = A3;
 
-// Konstanten
+// LED Pins
+const int WeiseLED = A4;
+const int GelbeLEDLinks = 12;
+const int GelbeLEDRechts = 0;
+const int RoteLED = 1;
+
+// Sensoren
+const int LDR = A5;
+
+// Konstanten um den Ram zu "schonen"
 const int normale_geschwindigkeit = 100;
 const int schnell_geschwindigkeit = 150;
 const int rueckwaerts_geschwindigkeit = 60;
+const int maxEntfernung = 10;
+const int drehung = 480;
 
 // Statusvariablen
 bool debug;
 
 // Variablen
-int drehung = 480;
 int returnwert;
-
-int maxEntfernung = 200;
-
-
 
 // Funktion zum Debuggen
 void print(String text) {
   if (debug) {
     Serial.println(text);
+  }
+}
+
+void LDRMessung() {
+  int LDR = analogRead(A5);
+  print("LDR: " + String(LDR));
+  if (LDR < 10) {
+    digitalWrite(WeiseLED, HIGH);
+  } else {
+    digitalWrite(WeiseLED, LOW);
   }
 }
 
@@ -61,15 +79,28 @@ void setup() {
   pinMode(echoRechts, INPUT);
   pinMode(echoHinten, INPUT);
 
-  Serial.begin(9600);
-
-  TurnRight(10000);
-
   debug = false;  //Debugging aktivieren/deaktivieren
+
+  if (debug) {
+    Serial.begin(9600);
+  }
+}
+
+bool wait(int time) { // wartet für eine bestimmte Zeit
+  static unsigned long startTime = 0;
+  if (startTime == 0) {
+    startTime = millis();
+  }
+  if (millis() - startTime >= time) {
+    startTime = 0;
+    return true;
+  }
+  return false;
 }
 
 void loop() {
-  int decision = driveDecision();
+  LDRMessung();
+  int decision = driveDecision(); // entscheide aufgrund der Funktion wie gefahren werden soll
   print("Decision: " + String(decision));
   switch (decision) {
     case 1:
@@ -88,6 +119,10 @@ void loop() {
       Backward(rueckwaerts_geschwindigkeit);
       break;
     case 6:
+      digitalWrite(RoteLED, HIGH);
+      if (wait(250)) {
+        digitalWrite(RoteLED, LOW);
+      }
       Stop();
       break;
   }
@@ -104,13 +139,16 @@ int driveDecision() {
   6: Stop
   */
   int entfernungVorne = messeEntfernung(triggerVorne, echoVorne);
-  if (entfernungVorne > 20) {
-    return 1;
+  if (entfernungVorne > (maxEntfernung*5)) {
+    if (entfernungVorne > maxEntfernung) {
+      return 1;
+    }
+    return 2;
   } else {
-    // !KEIN ELSE IF! Da das sonst die Leistung stark beeinträchtigt wird, da alle Sensoren gemessen werden müssen!
+    // !KEIN ELSE IF! Da das sonst die Leistung stark beeinträchtigt wird, da alle Sensoren direkt gemessen werden müssen!
     int entfernungLinks = messeEntfernung(triggerLinks, echoLinks);
     int entfernungRechts = messeEntfernung(triggerRechts, echoRechts);
-    if (entfernungLinks > 30 || entfernungRechts > 30) {
+    if (entfernungLinks > (maxEntfernung*2) || entfernungRechts > (maxEntfernung*2)) {
       //Fahre in die Richtung mit mehr Platz
       if (entfernungLinks > entfernungRechts) {
         return 3;
@@ -119,7 +157,7 @@ int driveDecision() {
       }
     } else {
       int entfernungHinten = messeEntfernung(triggerHinten, echoHinten);
-      if (entfernungHinten > 20) {
+      if (entfernungHinten > maxEntfernung) {
         return 5;
       } else {
         return 6;
@@ -137,7 +175,7 @@ int messeEntfernung(int triggerPin, int echoPin) {
   digitalWrite(triggerPin, LOW);
   long Zeit = pulseIn(echoPin, HIGH);
   returnwert = (Zeit / 2) * 0.03432;
+  print("Entfernung: " + String(returnwert));
 
   return returnwert;  //Returnt die Entfernung in cm
 }
-
