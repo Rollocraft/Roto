@@ -1,78 +1,48 @@
 #include <Arduino.h>
 
-int triggerVorne = 8;
-int echoVorne = 9;
+// Pinbelegung
+const int triggerVorne = 8;
+const int echoVorne = 9;
 
-int triggerLinks = 7;
-int echoLinks = 6;
+const int triggerLinks = 7;
+const int echoLinks = 6;
 
-int triggerRechts = 4;
-int echoRechts = 5;
+const int triggerRechts = 4;
+const int echoRechts = 5;
 
-int triggerHinten = 2;
-int echoHinten = 3;
+const int triggerHinten = 2;
+const int echoHinten = 3;
 
-int motorENA = 11;
-int motorENB = 10;
-int motorIN1 = A0;
-int motorIN2 = A1;
-int motorIN3 = A2;
-int motorIN4 = A3;
+const int motorENA = 11;
+const int motorENB = 10;
+const int motorIN1 = A0;
+const int motorIN2 = A1;
+const int motorIN3 = A2;
+const int motorIN4 = A3;
 
+// Konstanten
+const int normale_geschwindigkeit = 100;
+const int schnell_geschwindigkeit = 150;
+const int rueckwaerts_geschwindigkeit = 60;
+
+// Statusvariablen
+bool debug;
+
+// Variablen
+int drehung = 480;
 int returnwert;
-
-int run = 0;
 
 int maxEntfernung = 200;
 
-int Zeit;
 
-void TurnRight(int time) {
-  digitalWrite(motorIN1, HIGH);
-  digitalWrite(motorIN2, LOW);
-  digitalWrite(motorIN3, LOW);
-  digitalWrite(motorIN4, HIGH);
-  analogWrite(motorENA, 100);
-  analogWrite(motorENB, 100);
-  delay(time);
+
+// Funktion zum Debuggen
+void print(String text){
+  if(debug){
+    Serial.println(text);
+  }
 }
 
-void TurnLeft(int time) {
-  digitalWrite(motorIN1, LOW);
-  digitalWrite(motorIN2, HIGH);
-  digitalWrite(motorIN3, HIGH);
-  digitalWrite(motorIN4, LOW);
-  analogWrite(motorENA, 100);
-  analogWrite(motorENB, 100);
-  delay(time);
-}
-
-void Forward() {
-  digitalWrite(motorIN1, LOW);
-  digitalWrite(motorIN2, HIGH);
-  digitalWrite(motorIN3, LOW);
-  digitalWrite(motorIN4, HIGH);
-  analogWrite(motorENA, 200);
-  analogWrite(motorENB, 200);
-}
-
-void Backward() {
-  digitalWrite(motorIN1, HIGH);
-  digitalWrite(motorIN2, LOW);
-  digitalWrite(motorIN3, HIGH);
-  digitalWrite(motorIN4, LOW);
-  analogWrite(motorENA, 200);
-  analogWrite(motorENB, 200);
-}
-
-void Stop() {
-  digitalWrite(motorIN1, LOW);
-  digitalWrite(motorIN2, LOW);
-  digitalWrite(motorIN3, LOW);
-  digitalWrite(motorIN4, LOW);
-  analogWrite(motorENA, 0);
-  analogWrite(motorENB, 0);
-}
 void setup() {
   pinMode(motorENA, OUTPUT);
   pinMode(motorENB, OUTPUT);
@@ -92,30 +62,64 @@ void setup() {
   pinMode(echoHinten, INPUT);
 
   Serial.begin(9600);
+
+  debug = true; //Debugging aktivieren/deaktivieren
 }
 
 void loop() {
+  int decision = driveDecision();
+  print("Decision: " + String(decision));
+  switch (decision){
+    case 1:
+      Forward(normale_geschwindigkeit);
+      break;
+    case 2:
+      Forward(schnell_geschwindigkeit);
+      break;
+    case 3:
+      TurnLeft(drehung);
+      break;
+    case 4:
+      TurnRight(drehung);
+      break;
+    case 5:
+      Backward(rueckwaerts_geschwindigkeit);
+      break;
+    case 6:
+      Stop();
+      break;
+  }   
+}
+
+int driveDecision(){
+  /*
+  0: Fehler 
+  1: Forwärts 
+  2: Forwärts Schnell
+  3: Links 
+  4: Rechts
+  5: Rückwärts
+  6: Stop
+  */
   int entfernungVorne = messeEntfernung(triggerVorne, echoVorne);
-
-  if (entfernungVorne > 20) {
-    Forward();
-  } else {
-    Stop();
-    
-    //Messe Entfernung Links und Rechts und fahre in die Richtung mit mehr Platz
-    int entfernungLinks = messeEntfernung(triggerLinks, echoLinks);
-    int entfernungRechts = messeEntfernung(triggerRechts, echoRechts);
-
-    if (entfernungRechts > entfernungLinks) {
-      Serial.println("Moving Right");
-      TurnRight(480);
-      Serial.println("done");
+  int entfernungHinten = messeEntfernung(triggerHinten, echoHinten);
+  int entfernungLinks = messeEntfernung(triggerLinks, echoLinks);
+  int entfernungRechts = messeEntfernung(triggerRechts, echoRechts);
+  if (entfernungVorne > 20){
+    return 1;
+  } else if (entfernungLinks > 30 || entfernungRechts > 30){
+    //Fahre in die Richtung mit mehr Platz
+    if(entfernungLinks > entfernungRechts){
+      return 3;
     } else {
-      Serial.println("Moving Left");
-      TurnLeft(480);
-      Serial.println("done");
+      return 4;
     }
+  } else if(entfernungHinten > 20){
+    return 5;
+  } else {
+    return 6;
   }
+  return 0;
 }
 
 int messeEntfernung(int triggerPin, int echoPin) {
@@ -127,5 +131,6 @@ int messeEntfernung(int triggerPin, int echoPin) {
   long Zeit = pulseIn(echoPin, HIGH);
   returnwert = (Zeit / 2) * 0.03432;
 
-  return returnwert; //Returnt die Entfernung in cm
+  return returnwert;  //Returnt die Entfernung in cm
 }
+
