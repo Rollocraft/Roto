@@ -1,7 +1,6 @@
-// Variablen
-
 #include <Arduino.h>
 
+// Variablen
 int triggerVorne = 8;
 int echoVorne = 9;
 
@@ -48,7 +47,8 @@ int turn_dif = 545;
 
 // setup
 
-void setup() {
+void setup()
+{
   pinMode(motorENA, OUTPUT);
   pinMode(motorENB, OUTPUT);
   pinMode(motorIN1, OUTPUT);
@@ -77,166 +77,144 @@ void setup() {
   Serial.begin(9600);
 }
 
-void forward() {}
+void forward()
+{
+  digitalWrite(motorIN1, LOW);
+  digitalWrite(motorIN2, HIGH);
+  digitalWrite(motorIN3, LOW);
+  digitalWrite(motorIN4, HIGH);
+  analogWrite(motorENA, 200);
+  analogWrite(motorENB, 200);
+}
 
-void backward() {}
+void backward()
+{
+  digitalWrite(motorIN1, HIGH);
+  digitalWrite(motorIN2, LOW);
+  digitalWrite(motorIN3, HIGH);
+  digitalWrite(motorIN4, LOW);
+  analogWrite(motorENA, 200);
+  analogWrite(motorENB, 200);
+}
 
-void turnRight(int time) {}
+void turnRight(int time)
+{
+  digitalWrite(motorIN1, HIGH);
+  digitalWrite(motorIN2, LOW);
+  digitalWrite(motorIN3, LOW);
+  digitalWrite(motorIN4, HIGH);
+  analogWrite(motorENA, 100);
+  analogWrite(motorENB, 100);
+  delay(12);
+}
 
-void turnLeft(int time) {}
+void turnLeft(int time)
+{
+  digitalWrite(motorIN1, LOW);
+  digitalWrite(motorIN2, HIGH);
+  digitalWrite(motorIN3, HIGH);
+  digitalWrite(motorIN4, LOW);
+  analogWrite(motorENA, 100);
+  analogWrite(motorENB, 100);
+  delay(12);
+}
 
-void stop() {}
+void stop()
+{
+  digitalWrite(motorIN1, LOW);
+  digitalWrite(motorIN2, LOW);
+  digitalWrite(motorIN3, LOW);
+  digitalWrite(motorIN4, LOW);
+  analogWrite(motorENA, 0);
+  analogWrite(motorENB, 0);
+}
 
-void LDRM() {
+void LDRM()
+{
   int LDR_Wert = analogRead(LDR);
 
-  if (!LDR_Wert > 400) {
+  if (!LDR_Wert > 400)
+  {
     digitalWrite(LedWeiss, HIGH);
-  } else {
+  }
+  else
+  {
     digitalWrite(LedWeiss, LOW);
   }
 }
 
-
-void loop() {
-
+void loop()
+{
   LDRM();
 
   int entfernungVorne = messeEntfernung(triggerVorne, echoVorne);
   int entfernungLinks = messeEntfernung(triggerLinks, echoLinks);
 
-  if (entfernungVorne > 20) {
-    if (entfernungLinks != entfernungLinksOld) {
-      if (entfernungLinks > entfernungLinksOld) {
+  if (entfernungVorne > 20)
+  { //Falls der Roboter nicht gerade fährt
+    if (entfernungLinks != entfernungLinksOld)
+    { // Gleicht es aus
+      if (entfernungLinks > entfernungLinksOld)
+      {
         Serial.println("Moving Left");
-        digitalWrite(motorIN1, LOW);
-        digitalWrite(motorIN2, HIGH);
-        digitalWrite(motorIN3, HIGH);
-        digitalWrite(motorIN4, LOW);
-        analogWrite(motorENA, 100);
-        analogWrite(motorENB, 100);
-        delay(12);
-        Serial.println("done");
-      } else {
-        Serial.println("Moving Right");
-        digitalWrite(motorIN1, HIGH);
-        digitalWrite(motorIN2, LOW);
-        digitalWrite(motorIN3, LOW);
-        digitalWrite(motorIN4, HIGH);
-        analogWrite(motorENA, 100);
-        analogWrite(motorENB, 100);
-        delay(12);
+        turnLeft(turn);
         Serial.println("done");
       }
-      digitalWrite(motorIN1, LOW);
-      digitalWrite(motorIN2, HIGH);
-      digitalWrite(motorIN3, LOW);
-      digitalWrite(motorIN4, HIGH);
-      analogWrite(motorENA, 200);
-      analogWrite(motorENB, 200);
-
+      else
+      {
+        Serial.println("Moving Right");
+        turnRight(turn);
+        Serial.println("done");
+      }
+      //Updaten der neuen entfernung Links
       entfernungLinksOld = entfernungLinks;
     }
-  } else if (entfernungRechts > 30 || entfernungLinks > 30) {
-
-    digitalWrite(LedGelb, HIGH);
-    digitalWrite(motorIN1, LOW);
-    digitalWrite(motorIN2, LOW);
-    digitalWrite(motorIN3, LOW);
-    digitalWrite(motorIN4, LOW);
-    analogWrite(motorENA, 0);
-    analogWrite(motorENB, 0);
-
-
+    forward();
+  }
+  else if (entfernungRechts > 30 || entfernungLinks > 30)
+  {
+    // Messungen von Rechts und Hitnen erst jetzt um Resourcen zu sparen
     int entfernungRechts = messeEntfernung(triggerRechts, echoRechts);
     int entfernungHinten = messeEntfernung(triggerHinten, echoHinten);
 
-    if (entfernungRechts > entfernungLinks) {
-      if (!run > 4) {
-        run = run++;
+    if (entfernungRechts > entfernungLinks)
+    {   
         Serial.println("Moving Right");
-        digitalWrite(motorIN1, HIGH);
-        digitalWrite(motorIN2, LOW);
-        digitalWrite(motorIN3, LOW);
-        digitalWrite(motorIN4, HIGH);
-        analogWrite(motorENA, 100);
-        analogWrite(motorENB, 100);
-        delay(turn);
+        turnRight(turn);
         Serial.println("done");
-      } else {
-        Serial.println("Moving Right");
-        digitalWrite(motorIN1, HIGH);
-        digitalWrite(motorIN2, LOW);
-        digitalWrite(motorIN3, LOW);
-        digitalWrite(motorIN4, HIGH);
-        analogWrite(motorENA, 100);
-        analogWrite(motorENB, 100);
-        delay(turn_dif);
-        Serial.println("done");
-        run = 0;
-      }
-    } else {
-      if (!run > 4) {
-        run = run++;
+    }
+    else
+    {
         Serial.println("Moving Left");
-        digitalWrite(motorIN1, LOW);
-        digitalWrite(motorIN2, HIGH);
-        digitalWrite(motorIN3, HIGH);
-        digitalWrite(motorIN4, LOW);
-        analogWrite(motorENA, 100);
-        analogWrite(motorENB, 100);
-        delay(turn);
+        turnLeft(turn);
         Serial.println("done");
-      } else {
-        Serial.println("Moving Left");
-        digitalWrite(motorIN1, HIGH);
-        digitalWrite(motorIN2, LOW);
-        digitalWrite(motorIN3, LOW);
-        digitalWrite(motorIN4, HIGH);
-        analogWrite(motorENA, 100);
-        analogWrite(motorENB, 100);
-        delay(turn_dif);
-        Serial.println("done");
-        run = 0;
-      }
+        run = 0;    
     }
 
-    digitalWrite(LedGelb, LOW);
-
+    // Nach der Drehung die Entfernung Links auf die neue Updaten 
     int entfernungLinks = messeEntfernung(triggerLinks, echoLinks);
-
     entfernungLinksOld = entfernungLinks;
 
-  } else if (entfernungHinten > 20) {
-
-
-      digitalWrite(motorIN1, HIGH);
-      digitalWrite(motorIN2, LOW);
-      digitalWrite(motorIN3, HIGH);
-      digitalWrite(motorIN4, LOW);
-      analogWrite(motorENA, 200);
-      analogWrite(motorENB, 200);
-    }
-
-  else {
-    digitalWrite(motorIN1, LOW);
-    digitalWrite(motorIN2, LOW);
-    digitalWrite(motorIN3, LOW);
-    digitalWrite(motorIN4, LOW);
-    analogWrite(motorENA, 0);
-    analogWrite(motorENB, 0);
-    tone(piezo, 750);
+  }
+  else if (entfernungHinten > 20)
+  {
+    backward();
+  }
+  else
+  {
+    stop();
+    tone(piezo, 1000);
   }
 }
 
-
-  int messeEntfernung(int triggerPin, int echoPin) {
-    digitalWrite(triggerPin, LOW);
-    delay(5);
-    digitalWrite(triggerPin, HIGH);
-    delay(10);
-    digitalWrite(triggerPin, LOW);
-    long Zeit = pulseIn(echoPin, HIGH);
-    returnwert = (Zeit / 2) * 0.03432;
-    return returnwert;
-  }
+int messeEntfernung(int triggerPin, int echoPin)
+{
+  digitalWrite(triggerPin, LOW);
+  delay(5);
+  digitalWrite(triggerPin, HIGH);
+  delay(10);
+  digitalWrite(triggerPin, LOW);
+  long Zeit = pulseIn(echoPin, HIGH);
+  returnwert = (Zeit / 2) * 0.03432;
+  return returnwert; //gibt die Entfernung in cm zurück
+}
