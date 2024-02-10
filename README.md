@@ -11,3 +11,4 @@ Mit 2 Gleichstrom-Motoren angetrieben und angestuert
 
 ### Feedback
 Leds sorgen für visuelles Feedback
+Ein Piezo sorgt für Audio Feedback
