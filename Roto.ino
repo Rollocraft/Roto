@@ -31,6 +31,9 @@ const int RoteLED = 1;
 // Sensoren
 const int LDR = A5;
 
+//Piezo
+const int piezo = 13;
+
 // Konstanten um den Ram zu "schonen"
 const int normale_geschwindigkeit = 100;
 const int schnell_geschwindigkeit = 150;
@@ -43,6 +46,9 @@ bool debug;
 
 // Variablen
 int returnwert;
+int run;
+int entfernungLinks;
+int entfernungLinksOld;
 
 // Funktion zum Debuggen
 void print(String text) {
@@ -84,6 +90,8 @@ void setup() {
   if (debug) {
     Serial.begin(9600);
   }
+   int entfernungLinks = messeEntfernung(triggerLinks, echoLinks);
+   entfernungLinksOld = entfernungLinks;
 }
 
 bool wait(int time) { // wartet für eine bestimmte Zeit
@@ -102,6 +110,16 @@ void loop() {
   LDRMessung();
   int decision = driveDecision(); // entscheide aufgrund der Funktion wie gefahren werden soll
   print("Decision: " + String(decision));
+  if(run > 8) { // Um eine Schrägfahrt zu vermeiden
+    run = 0;
+    int entfernungLinks = messeEntfernung(triggerLinks, echoLinks);
+    if(entfernungLinksOld > entfernungLinks) {
+      TurnLeft(10);
+    } else if(entfernungLinksOld < entfernungLinks) {
+      TurnRight(10);
+    } else {
+    }
+  }
   switch (decision) {
     case 1:
       Forward(normale_geschwindigkeit);
@@ -124,6 +142,13 @@ void loop() {
         digitalWrite(RoteLED, LOW);
       }
       Stop();
+      tone(piezo, 439);
+      delay(100);
+      tone(piezo, 539);
+      delay(100);
+      tone(piezo, 439);
+      delay(100);
+      noTone(piezo);
       break;
   }
 }
@@ -139,6 +164,7 @@ int driveDecision() {
   6: Stop
   */
   int entfernungVorne = messeEntfernung(triggerVorne, echoVorne);
+  run++;
   if (entfernungVorne > (maxEntfernung*5)) {
     if (entfernungVorne > maxEntfernung) {
       return 1;
